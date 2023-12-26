@@ -1,0 +1,170 @@
+Index: ../AI창의융합경진대회/dev/csv_func.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import os\r\nimport cv2\r\nimport mediapipe as mp\r\nimport pandas as pd\r\n\r\ndata_folder = 'C:\\\\Users\\\\USER\\Documents\\GitHub\\Basketball-injury-classification\\AI창의융합경진대회\\video_dataset'\r\n\r\ndef csv(df, output_name):\r\n    df.to_csv('C:\\\\Users\\\\USER\\Documents\\GitHub\\Basketball-injury-classification\\AI창의융합경진대회\\csv_dataset/'+ output_name +'.csv', index=False)\r\n\r\ndef create_df(video_name):\r\n    video_path = os.path.join(data_folder, video_name)\r\n    # 33개 landmark\r\n    BODY_PARTS = { \"Nose\": 0, \"LEye_in\": 1, \"LEye\": 2, \"LEye_out\": 3, \"REye_in\": 4, \"REye\": 5, \"REye_out\": 6, \"LEar\": 7, \"REar\":8,\r\n                   \"LMouth\": 9, \"RMouth\": 10, \"LShoulder\": 11, \"RShoulder\": 12,\r\n                   \"LElbow\": 13, \"RElbow\": 14, \"LWrist\": 15, \"RWrist\": 16,\r\n                   \"LPinky\": 17, \"RPinky\": 18, \"LIndex\": 19, \"RIndex\": 20,\r\n                   \"LThumb\": 21, \"RThumb\": 22, \"LHip\": 23, \"RHip\": 24,\r\n                   \"LKnee\": 25, \"RKnee\": 26, \"LAnkle\": 27, \"RAnkle\": 28,\r\n                   \"LHeel\": 29, \"RHeel\": 30, \"LFIndex\": 31, \"RFIndex\": 32}\r\n\r\n    mp_drawing = mp.solutions.drawing_utils\r\n    mp_drawing_styles = mp.solutions.drawing_styles\r\n    mp_pose = mp.solutions.pose\r\n\r\n    cap = cv2.VideoCapture(video_path)\r\n    pose = mp_pose.Pose(\r\n        min_detection_confidence=0.7,\r\n        min_tracking_confidence=0.5)\r\n\r\n    xy_name = []\r\n    for key in BODY_PARTS.keys():\r\n        name_x = f'{key}_x'\r\n        name_y = f'{key}_y'\r\n        name_z = f'{key}_z'\r\n        xy_name.append(name_x)\r\n        xy_name.append(name_y)\r\n        xy_name.append(name_z)\r\n\r\n    df = pd.DataFrame(columns=xy_name)\r\n\r\n    while cap.isOpened():\r\n        success, image = cap.read()\r\n        if not success:\r\n            break\r\n\r\n        image.flags.writeable = False\r\n        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)\r\n        image = cv2.resize(image, (400, 700))\r\n        results = pose.process(image)\r\n        if not results.pose_landmarks:\r\n            continue\r\n\r\n        # pose data 저장\r\n        x = [] # 2*33차원 리스트\r\n\r\n        # k = 좌표 번호\r\n        # results.pose_landmarks.landmark[k].x/y/z/visibility\r\n\r\n        for k in range(33):\r\n            if results.pose_landmarks:\r\n                x.append(results.pose_landmarks.landmark[k].x)\r\n                x.append(results.pose_landmarks.landmark[k].y)\r\n                x.append(results.pose_landmarks.landmark[k].z)\r\n                # x.append(results.pose_landmarks.landmark[k].visibility)\r\n            else:\r\n                x.append(None)\r\n                x.append(None)\r\n                x.append(None)\r\n\r\n        new_row = pd.Series(x, index=df.columns)\r\n        df = pd.concat([df, new_row.to_frame().T], ignore_index=True)\r\n        csv(df, video_name)\r\n    return\r\n\r\n\r\n# Draw the pose annotation on the image.\r\n# image.flags.writeable = True\r\n# image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)\r\n# mp_drawing.draw_landmarks(\r\n#     image,\r\n#     results.pose_landmarks,\r\n#     mp_pose.POSE_CONNECTIONS,\r\n#     landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())\r\n#\r\n# cv2.imshow('MediaPipe Pose', cv2.flip(image, 1))
+===================================================================
+diff --git a/../AI창의융합경진대회/dev/csv_func.py b/../AI창의융합경진대회/dev/csv_func.py
+--- a/../AI창의융합경진대회/dev/csv_func.py	
++++ b/../AI창의융합경진대회/dev/csv_func.py	
+@@ -3,10 +3,10 @@
+ import mediapipe as mp
+ import pandas as pd
+ 
+-data_folder = 'C:\\Users\\USER\Documents\GitHub\Basketball-injury-classification\AI창의융합경진대회\video_dataset'
++data_folder = 'video_dataset'
+ 
+ def csv(df, output_name):
+-    df.to_csv('C:\\Users\\USER\Documents\GitHub\Basketball-injury-classification\AI창의융합경진대회\csv_dataset/'+ output_name +'.csv', index=False)
++    df.to_csv('csv_dataset/'+ output_name +'.csv', index=False)
+ 
+ def create_df(video_name):
+     video_path = os.path.join(data_folder, video_name)
+@@ -52,7 +52,7 @@
+             continue
+ 
+         # pose data 저장
+-        x = [] # 2*33차원 리스트
++        x = [] # 3*33차원 리스트
+ 
+         # k = 좌표 번호
+         # results.pose_landmarks.landmark[k].x/y/z/visibility
+@@ -74,7 +74,7 @@
+     return
+ 
+ 
+-# Draw the pose annotation on the image.
++# 이미지 위에 포즈 그리기.
+ # image.flags.writeable = True
+ # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+ # mp_drawing.draw_landmarks(
+Index: ../AI창의융합경진대회/.idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"Black\">\r\n    <option name=\"sdkName\" value=\"C:\\Users\\Administrator\\anaconda3\" />\r\n  </component>\r\n  <component name=\"ProjectRootManager\" version=\"2\" project-jdk-name=\"C:\\Users\\USER\\anaconda3\" project-jdk-type=\"Python SDK\" />\r\n  <component name=\"PyCharmDSProjectLayout\">\r\n    <option name=\"id\" value=\"JupyterRightHiddenStructureLayout\" />\r\n  </component>\r\n</project>
+===================================================================
+diff --git a/../AI창의융합경진대회/.idea/misc.xml b/../AI창의융합경진대회/.idea/misc.xml
+--- a/../AI창의융합경진대회/.idea/misc.xml	
++++ b/../AI창의융합경진대회/.idea/misc.xml	
+@@ -3,7 +3,7 @@
+   <component name="Black">
+     <option name="sdkName" value="C:\Users\Administrator\anaconda3" />
+   </component>
+-  <component name="ProjectRootManager" version="2" project-jdk-name="C:\Users\USER\anaconda3" project-jdk-type="Python SDK" />
++  <component name="ProjectRootManager" version="2" project-jdk-name="C:\Users\Administrator\anaconda3" project-jdk-type="Python SDK" />
+   <component name="PyCharmDSProjectLayout">
+     <option name="id" value="JupyterRightHiddenStructureLayout" />
+   </component>
+Index: ../AI창의융합경진대회/.gitignore
+===================================================================
+diff --git a/../AI창의융합경진대회/.gitignore b/../AI창의융합경진대회/.gitignore
+--- a/../AI창의융합경진대회/.gitignore	
++++ b/../AI창의융합경진대회/.gitignore	
+@@ -1,0 +1,3 @@
++.idea/
++.hwp
++.mp4
+\ No newline at end of file
+Index: ../AI창의융합경진대회/visualize.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import cv2\r\nimport mediapipe as mp\r\nimport numpy as np\r\n\r\ndef calculate_angle_tan(a, b, c):\r\n    ba = b - a\r\n    bc = b - c\r\n    dot_result = np.dot(ba, bc)\r\n    ba_size = np.linalg.norm(ba)\r\n    bc_size = np.linalg.norm(bc)\r\n    radi = np.arccos(dot_result / (ba_size * bc_size))\r\n    angle = np.abs(radi * 180.0 / np.pi)\r\n    return angle\r\n\r\n# Mediapipe 초기화\r\nmp_drawing = mp.solutions.drawing_utils\r\nmp_drawing_styles = mp.solutions.drawing_styles\r\nmp_pose = mp.solutions.pose\r\npose = mp_pose.Pose(\r\n    min_detection_confidence=0.7,\r\n    min_tracking_confidence=0.5)\r\n\r\n# 카메라 오픈\r\ncap = cv2.VideoCapture(0)\r\n\r\nwhile cap.isOpened():\r\n    ret, frame = cap.read()\r\n    if not ret:\r\n        break\r\n\r\n    # Pose 모델로 랜드마크 감지\r\n    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\r\n    results = pose.process(frame_rgb)\r\n\r\n    # 특정 랜드마크 쌍 간의 각도의 tan 값 계산 및 위치 조정\r\n    if results.pose_landmarks:\r\n        landmarks = results.pose_landmarks.landmark\r\n        landmarks = np.array([[landmark.x, landmark.y, landmark.z] for landmark in landmarks])\r\n\r\n        # 특정 랜드마크 쌍 선택 (여기서는 어깨, 팔꿈치, 손목)\r\n        idx_a, idx_b, idx_c = 11, 13, 21\r\n        angle = calculate_angle_tan(landmarks[idx_a], landmarks[idx_b], landmarks[idx_c])\r\n\r\n        # Tan 값 표시\r\n        text_position = (200, 200)  # 얼굴 상자 위쪽에 표시\r\n        frame = cv2.putText(frame, f'Angle: {angle:.2f}', text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)\r\n\r\n        # 랜드마크 선으로 이어주기\r\n        landmark_points = [(int(landmark[0] * frame.shape[1]), int(landmark[1] * frame.shape[0])) for landmark in landmarks]\r\n        cv2.line(frame, landmark_points[idx_a], landmark_points[idx_b], (0, 255, 0), 2)\r\n        cv2.line(frame, landmark_points[idx_b], landmark_points[idx_c], (0, 255, 0), 2)\r\n\r\n    cv2.imshow('Pose Detection', frame)\r\n\r\n    # 종료 조건\r\n    if cv2.waitKey(1) & 0xFF == 27:  # ESC 키를 누르면 종료\r\n        break\r\n\r\n# 정리 작업\r\ncap.release()\r\ncv2.destroyAllWindows()\r\n\r\n#%%\r\n
+===================================================================
+diff --git a/../AI창의융합경진대회/visualize.py b/../AI창의융합경진대회/visualize.py
+--- a/../AI창의융합경진대회/visualize.py	
++++ b/../AI창의융합경진대회/visualize.py	
+@@ -2,7 +2,8 @@
+ import mediapipe as mp
+ import numpy as np
+ 
+-def calculate_angle_tan(a, b, c):
++# 부위별 각도 실시간 표시
++def calculate_angle(a, b, c):
+     ba = b - a
+     bc = b - c
+     dot_result = np.dot(ba, bc)
+@@ -12,7 +13,6 @@
+     angle = np.abs(radi * 180.0 / np.pi)
+     return angle
+ 
+-# Mediapipe 초기화
+ mp_drawing = mp.solutions.drawing_utils
+ mp_drawing_styles = mp.solutions.drawing_styles
+ mp_pose = mp.solutions.pose
+@@ -20,7 +20,6 @@
+     min_detection_confidence=0.7,
+     min_tracking_confidence=0.5)
+ 
+-# 카메라 오픈
+ cap = cv2.VideoCapture(0)
+ 
+ while cap.isOpened():
+@@ -28,11 +27,9 @@
+     if not ret:
+         break
+ 
+-    # Pose 모델로 랜드마크 감지
+     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+     results = pose.process(frame_rgb)
+ 
+-    # 특정 랜드마크 쌍 간의 각도의 tan 값 계산 및 위치 조정
+     if results.pose_landmarks:
+         landmarks = results.pose_landmarks.landmark
+         landmarks = np.array([[landmark.x, landmark.y, landmark.z] for landmark in landmarks])
+@@ -41,22 +38,20 @@
+         idx_a, idx_b, idx_c = 11, 13, 21
+         angle = calculate_angle_tan(landmarks[idx_a], landmarks[idx_b], landmarks[idx_c])
+ 
+-        # Tan 값 표시
+-        text_position = (200, 200)  # 얼굴 상자 위쪽에 표시
++        # 라디안 값 표시
++        text_position = (200, 200)  # 얼굴 상자 위쪽
+         frame = cv2.putText(frame, f'Angle: {angle:.2f}', text_position, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+ 
+-        # 랜드마크 선으로 이어주기
++        # 랜드마크 선으로 연결
+         landmark_points = [(int(landmark[0] * frame.shape[1]), int(landmark[1] * frame.shape[0])) for landmark in landmarks]
+         cv2.line(frame, landmark_points[idx_a], landmark_points[idx_b], (0, 255, 0), 2)
+         cv2.line(frame, landmark_points[idx_b], landmark_points[idx_c], (0, 255, 0), 2)
+ 
+     cv2.imshow('Pose Detection', frame)
+ 
+-    # 종료 조건
+-    if cv2.waitKey(1) & 0xFF == 27:  # ESC 키를 누르면 종료
++    if cv2.waitKey(0):  # ESC 키를 누르면 종료
+         break
+ 
+-# 정리 작업
+ cap.release()
+ cv2.destroyAllWindows()
+ 
+Index: ../창개연/.gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>transformer.ipynb\r\n2023학년도 2학기 창의개인연구_계획서(1202_고정윤).hwp\r\n2023학년도 2학기 창의개인연구_계획서(1202_고정윤).pdf\r\n연구일지.hwp\r\n창의개인연구_보고서_0824.hwp\r\n
+===================================================================
+diff --git a/../창개연/.gitignore b/../창개연/.gitignore
+--- a/../창개연/.gitignore	
++++ b/../창개연/.gitignore	
+@@ -3,3 +3,4 @@
+ 2023학년도 2학기 창의개인연구_계획서(1202_고정윤).pdf
+ 연구일지.hwp
+ 창의개인연구_보고서_0824.hwp
++videodata
+Index: ../.idea/Basketball-injury-classification.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\" />\r\n    <orderEntry type=\"jdk\" jdkName=\"Python 3.11\" jdkType=\"Python SDK\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+===================================================================
+diff --git a/../.idea/Basketball-injury-classification.iml b/../.idea/Basketball-injury-classification.iml
+--- a/../.idea/Basketball-injury-classification.iml	
++++ b/../.idea/Basketball-injury-classification.iml	
+@@ -2,7 +2,7 @@
+ <module type="PYTHON_MODULE" version="4">
+   <component name="NewModuleRootManager">
+     <content url="file://$MODULE_DIR$" />
+-    <orderEntry type="jdk" jdkName="Python 3.11" jdkType="Python SDK" />
++    <orderEntry type="inheritedJdk" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
+ </module>
+\ No newline at end of file
